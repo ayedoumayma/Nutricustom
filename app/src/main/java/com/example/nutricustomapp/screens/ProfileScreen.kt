@@ -48,7 +48,7 @@ fun ProfileScreen(navController: NavController) {
                         database.userDAO().getUserByEmail(userEmail.value)
                     }
                     if (user != null) {
-                        userName.value = user.fullName
+                        userName.value = user.firstName
                     }
                 } catch (e: Exception) {
                     // Handle error silently

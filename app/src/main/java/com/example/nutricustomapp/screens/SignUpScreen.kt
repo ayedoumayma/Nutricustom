@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -26,8 +27,8 @@ import com.example.nutricustomapp.database.AppDatabase
 import com.example.nutricustomapp.models.User
 import com.example.nutricustomapp.ui.components.GamerButton
 import com.example.nutricustomapp.ui.components.GamerTextField
+import com.example.nutricustomapp.ui.components.GamerDatePickerField
 import com.example.nutricustomapp.ui.theme.GrayMedium
-import com.example.nutricustomapp.utils.Screen
 import com.example.nutricustomapp.utils.Validator
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,19 +39,31 @@ fun SignUpScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
     val database = remember { AppDatabase.getInstance(context) }
 
-    var fullName by remember { mutableStateOf("") }
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
+    var dateOfBirth by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
-    var fullNameError by remember { mutableStateOf(false) }
+    var firstNameError by remember { mutableStateOf(false) }
+    var lastNameError by remember { mutableStateOf(false) }
+    var dateOfBirthError by remember { mutableStateOf(false) }
     var emailError by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf(false) }
     var confirmPasswordError by remember { mutableStateOf(false) }
 
     // Real-time validation
-    LaunchedEffect(fullName) {
-        fullNameError = fullName.isNotEmpty() && !Validator.isValidFullName(fullName)
+    LaunchedEffect(firstName) {
+        firstNameError = firstName.isNotEmpty() && firstName.length < 2
+    }
+
+    LaunchedEffect(lastName) {
+        lastNameError = lastName.isNotEmpty() && lastName.length < 2
+    }
+
+    LaunchedEffect(dateOfBirth) {
+        dateOfBirthError = dateOfBirth.isNotEmpty() && !Validator.isValidDate(dateOfBirth)
     }
 
     LaunchedEffect(email) {
@@ -105,14 +118,38 @@ fun SignUpScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Full Name Field
+            // First Name Field
             GamerTextField(
-                value = fullName,
-                onValueChange = { fullName = it },
-                label = "FullName",
+                value = firstName,
+                onValueChange = { firstName = it },
+                label = "First Name",
                 icon = Icons.Default.Person,
-                isError = fullNameError,
-                errorMessage = "Must be at least 3 characters!"
+                isError = firstNameError,
+                errorMessage = "Must be at least 2 characters!"
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Last Name Field
+            GamerTextField(
+                value = lastName,
+                onValueChange = { lastName = it },
+                label = "Last Name",
+                icon = Icons.Default.Person,
+                isError = lastNameError,
+                errorMessage = "Must be at least 2 characters!"
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Date of Birth Field with DatePicker
+            GamerDatePickerField(
+                value = dateOfBirth,
+                onValueChange = { dateOfBirth = it },
+                label = "Date of Birth",
+                icon = Icons.Default.CalendarToday,
+                isError = dateOfBirthError,
+                errorMessage = "Please select your date of birth!"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -125,7 +162,7 @@ fun SignUpScreen(navController: NavController) {
                 icon = Icons.Default.Email,
                 keyboardType = KeyboardType.Email,
                 isError = emailError,
-                errorMessage = "Must not be empty!"
+                errorMessage = "Invalid email format!"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -138,7 +175,7 @@ fun SignUpScreen(navController: NavController) {
                 icon = Icons.Default.Lock,
                 isPassword = true,
                 isError = passwordError,
-                errorMessage = "Must not be empty!"
+                errorMessage = "Password must be at least 6 characters!"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -151,7 +188,7 @@ fun SignUpScreen(navController: NavController) {
                 icon = Icons.Default.Lock,
                 isPassword = true,
                 isError = confirmPasswordError,
-                errorMessage = "Must be the same password!"
+                errorMessage = "Passwords must match!"
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -160,17 +197,22 @@ fun SignUpScreen(navController: NavController) {
             GamerButton(
                 text = "Submit",
                 onClick = {
-                    val isFullNameValid = Validator.isValidFullName(fullName)
+                    val isFirstNameValid = firstName.length >= 2
+                    val isLastNameValid = lastName.length >= 2
+                    val isDateOfBirthValid = dateOfBirth.isNotEmpty()
                     val isEmailValid = Validator.isValidEmail(email)
                     val isPasswordValid = Validator.isValidPassword(password)
                     val isConfirmPasswordValid = Validator.doPasswordsMatch(password, confirmPassword)
 
-                    fullNameError = !isFullNameValid
+                    firstNameError = !isFirstNameValid
+                    lastNameError = !isLastNameValid
+                    dateOfBirthError = !isDateOfBirthValid
                     emailError = !isEmailValid
                     passwordError = !isPasswordValid
                     confirmPasswordError = !isConfirmPasswordValid
 
-                    if (isFullNameValid && isEmailValid && isPasswordValid && isConfirmPasswordValid) {
+                    if (isFirstNameValid && isLastNameValid && isDateOfBirthValid &&
+                        isEmailValid && isPasswordValid && isConfirmPasswordValid) {
                         scope.launch {
                             try {
                                 // Check if user already exists
@@ -185,7 +227,9 @@ fun SignUpScreen(navController: NavController) {
                                     withContext(Dispatchers.IO) {
                                         database.userDAO().insert(
                                             User(
-                                                fullName = fullName,
+                                                firstName = firstName,
+                                                lastName = lastName,
+                                                dateOfBirth = dateOfBirth,
                                                 email = email,
                                                 password = password
                                             )
@@ -203,7 +247,7 @@ fun SignUpScreen(navController: NavController) {
                         }
                     } else {
                         scope.launch {
-                            snackbarHostState.showSnackbar("You Have some errors in your inputs!")
+                            snackbarHostState.showSnackbar("Please fix all errors!")
                         }
                     }
                 }

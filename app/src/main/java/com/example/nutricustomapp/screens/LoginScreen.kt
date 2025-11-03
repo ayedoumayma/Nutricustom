@@ -142,7 +142,7 @@ fun LoginScreen(navController: NavController) {
 
                                 if (user != null) {
                                     // Save session
-                                    saveUserSession(context, user.email, user.fullName)
+                                    saveUserSession(context, user.email, user.firstName)
 
                                     snackbarHostState.showSnackbar("Login Successful!")
 
